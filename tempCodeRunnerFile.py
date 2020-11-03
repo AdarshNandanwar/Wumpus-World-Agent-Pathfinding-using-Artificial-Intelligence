@@ -1,2 +1,2 @@
-
-        cur = queue.pop(0)
+ {0}".format(clauses))
+    # print("model: {

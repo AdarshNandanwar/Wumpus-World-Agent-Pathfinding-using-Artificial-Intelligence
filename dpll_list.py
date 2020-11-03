@@ -4,14 +4,12 @@ from Agent import * # See the Agent.py file
 
 #### All your code can go here.
 
-GRID_SIZE = 4
-
 def find_pure_symbols(clauses, symbols, model):
     for sym in symbols:
         value = None
         is_pure_symbol = True
         for clause in clauses:
-            for c in clause.split():
+            for c in clause:
                 if sym in c:
                     if value is None:
                         value = c[0] is not '!'
@@ -22,7 +20,6 @@ def find_pure_symbols(clauses, symbols, model):
             if not is_pure_symbol:
                 break
         if is_pure_symbol:
-            # if sym not in clauses, None value is returned
             return sym, value
     return None, None
 
@@ -34,35 +31,23 @@ def find_unit_clause(clauses, model):
 
 def dpll(clauses, symbols, model):
 
-    # print("clauses: {0}".format(clauses))
-    # print("model: {0}".format(model))
+    print()
+
+    print("clauses: {0}".format(clauses))
+    print("model: {0}".format(model))
 
     # Remove true clauses as we go
 
-
-    # max frequency symbol
-    max_sym = [None, 0]
-    freq = dict()
-
     # checking if all clauses are true or if any clause is false
     is_all_true = True
-    next_clauses = set()
+    next_clauses = []
     for clause in clauses:
-        clause = clause.split()
         new_clause = []
         is_not_assigned = False    # True when the clause is False
         is_true = False    
         add_clause = True
         for c in clause:
             sym, sign = (c, True) if c[0] is not '!' else (c[1:], False)
-
-            if sym in freq:
-                freq[sym] += 1
-            else:
-                freq[sym] = 1
-            if max_sym[1] < freq[sym]:
-                max_sym = [sym, freq[sym]]
-
             add_literal = True
             if sym in model:
                 if model.get(sym) is sign:
@@ -80,23 +65,23 @@ def dpll(clauses, symbols, model):
             is_all_true = False
         is_false = not is_true and not is_not_assigned
         if is_false:
-            # print("one false")
+            print("one false")
             return False
         if add_clause is True:
-            next_clauses.add(' '.join(new_clause))
+            next_clauses.append(new_clause)
 
 
     if is_all_true:
-        # print("all true")
+        print("all true")
         return True
 
     
-    # print("next_clauses: {0}".format(next_clauses))
+    print("next_clauses: {0}".format(next_clauses))
 
     # finding pure symbols
     pure_symbol, value = find_pure_symbols(next_clauses, symbols, model)
     if pure_symbol is not None:
-        # print("pure_symbol: {0} = {1}".format(pure_symbol, value))
+        print("pure_symbol: {0} = {1}".format(pure_symbol, value))
         next_symbols = symbols.copy()
         next_symbols.remove(pure_symbol)
         next_model = model.copy()
@@ -106,19 +91,17 @@ def dpll(clauses, symbols, model):
     # finding unit clause
     unit_clause, value = find_unit_clause(next_clauses, model)
     if unit_clause is not None:
-        # print("unit_clause: {0} = {1}".format(unit_clause, value))
+        print("unit_clause: {0} = {1}".format(unit_clause, value))
         next_symbols = symbols.copy()
         next_symbols.remove(unit_clause)
         next_model = model.copy()
         next_model[unit_clause] = value
         return dpll(next_clauses, next_symbols, next_model)
 
-    # print("SHOULD NEVER REACH HERE")
+    print("SHOULD NEVER REACH HERE")
 
     next_symbols = symbols.copy()
-    first = max_sym[0]
-    if first in next_symbols:
-        next_symbols.remove(first)
+    first = next_symbols.pop()
     next_model = model.copy()
     next_model[first] = True
     if dpll(next_clauses, next_symbols, next_model): return True
@@ -139,7 +122,7 @@ def plan_route(src, dest, allowed_rooms):
         if cur == dest:
             break
         dir = [0, -1, 0, 1, 0]
-        for i in range(GRID_SIZE):
+        for i in range(4):
             nbr = [cur[0]+dir[i], cur[1]+dir[i+1]]
             nbr_room = 'r'+str(nbr[0])+str(nbr[1])
             if nbr_room in allowed_rooms and nbr_room not in visited:
@@ -174,11 +157,12 @@ def hybrid_wumpus_agent(ag, kb, symbols, model):
     visited = set()
 
     while True:
+        print()
 
         loc = ag.FindCurrentLocation()
         print(loc)
 
-        if loc is [GRID_SIZE,GRID_SIZE]:
+        if loc is [4,4]:
             break
 
         percept = ag.PerceiveCurrentLocation()
@@ -188,28 +172,21 @@ def hybrid_wumpus_agent(ag, kb, symbols, model):
 
         if percept[0]:
             # breeze
-            kb.append('b'+str(loc[0])+str(loc[1]))
+            kb.append(['b'+str(loc[0])+str(loc[1])])
 
         if percept[1]:
             # stench
-            kb.append('s'+str(loc[0])+str(loc[1]))
+            kb.append(['s'+str(loc[0])+str(loc[1])])
 
+        # if dpll(kb+[[]], symbols, {}) is True:
         dir = [0, -1, 0, 1, 0]
-        for k in range(GRID_SIZE):
+        for k in range(4):
             x = loc[0]+dir[k]
             y = loc[1]+dir[k+1]
-            if x>=1 and x<=GRID_SIZE and y>=1 and y<=GRID_SIZE and 'r'+str(x)+str(y) not in visited:
-                kb_p = kb.copy()
-                kb_p.add('p'+str(x)+str(y))
-                is_no_pit = (dpll(kb_p, symbols, {}) == False)
-                if is_no_pit:
-                    kb.add('!p'+str(x)+str(y))
-                kb_w = kb.copy()
-                kb_w.add('w'+str(x)+str(y))
-                is_no_wumpus = (dpll(kb_w, symbols, {}) == False)
-                if is_no_wumpus:
-                    kb.add('!w'+str(x)+str(y))
-                print("dpll {0}: no pit {1}, no wumpus {2}".format('r'+str(x)+str(y), is_no_pit, is_no_wumpus))
+            if x>=1 and x<=4 and y>=1 and y<=4 and 'r'+str(x)+str(y) not in visited:
+                is_no_pit = (dpll(kb+[['p'+str(x)+str(y)]], symbols, {}) == True)
+                is_no_wumpus = (dpll(kb+[['w'+str(x)+str(y)]], symbols, {}) == True)
+                print("dpll {0}: pit {1}, wumpus {2}".format('r'+str(x)+str(y), not is_no_pit, not is_no_wumpus))
                 if is_no_pit and is_no_wumpus:
                     safe.add('r'+str(x)+str(y))
 
@@ -217,15 +194,11 @@ def hybrid_wumpus_agent(ag, kb, symbols, model):
         print("visited {0}".format(visited))
 
         # assuming there is always a safe room
-        if len(safe) == len(visited):
+        if len(safe) == 0:
             print("no safe room")
             return
 
-        next_room = None
-        for room in safe:
-            if room not in visited:
-                next_room = room
-                break
+        next_room = safe.pop()
         print("next_room {0}".format(next_room))
 
         action_sequence = plan_route(loc, [int(next_room[1]), int(next_room[2])], visited)
@@ -250,95 +223,87 @@ def main():
 
 
     symbols = set()
-    for i in range(1, GRID_SIZE+1):
-        for j in range(1, GRID_SIZE+1):
+    for i in range(1, 5):
+        for j in range(1, 5):
             symbols.add('w'+str(i)+str(j))
             symbols.add('p'+str(i)+str(j))
             symbols.add('b'+str(i)+str(j))
             symbols.add('s'+str(i)+str(j))
 
-    kb = set()
+    kb = []
 
     # no pit or wumpus in [1,1]
-    kb.add('!p11')
-    kb.add('!w11')
+    kb.append(['!p11'])
+    kb.append(['!w11'])
 
     # add breeze <-> pit and stench <-> wumpus sentences
     dir = [0, -1, 0, 1, 0]
     percept = ['b', 's']
     conclusion = ['p', 'w']
     for p in range(2):
-        for i in range(1,GRID_SIZE+1):
-            for j in range(1,GRID_SIZE+1):
-                clauses = []
-                for k in range(GRID_SIZE):
+        for i in range(1,5):
+            for j in range(1,5):
+                sentence = []
+                for k in range(4):
                     x = i+dir[k]
                     y = j+dir[k+1]
-                    if x>=1 and x<=GRID_SIZE and y>=1 and y<=GRID_SIZE:
-                        if len(clauses) == 0:
-                            clauses.append(['!'+percept[p]+str(i)+str(j)])
-                        clauses[0].append(conclusion[p]+str(x)+str(y))
-                        clauses.append([percept[p]+str(i)+str(j), '!'+conclusion[p]+str(x)+str(y)])
-                if len(clauses) > 0:
-                    for clause in clauses:
-                        kb.add(' '.join(clause))
-                    # print("[{0},{1}]: {2}".format(i, j, clauses))
+                    if x>=1 and x<=4 and y>=1 and y<=4:
+                        if len(sentence) == 0:
+                            sentence.append(['!'+percept[p]+str(i)+str(j)])
+                        sentence[0].append(conclusion[p]+str(x)+str(y))
+                        sentence.append([percept[p]+str(i)+str(j), '!'+conclusion[p]+str(x)+str(y)])
+                if len(sentence) > 0:
+                    kb.extend(sentence)
+                    # print("[{0},{1}]: {2}".format(i, j, sentence))
 
     # atleast 1 wumpus and atleast 1 pit
     for k in {'w', 'p'}:
         clause = []
-        for i in range(1,GRID_SIZE+1):
-            for j in range(1,GRID_SIZE+1):
+        for i in range(1,5):
+            for j in range(1,5):
                 clause.append(k+str(i)+str(j))
-        kb.add(' '.join(clause))
+        kb.append(clause)
 
     # atmost 1 wumpus and atmost 1 pit 
     for k in {'w', 'p'}:
         clauses = []
-        for P in range(GRID_SIZE*GRID_SIZE):
-            for Q in range(P+1, GRID_SIZE*GRID_SIZE):
-                i1 = P%GRID_SIZE+1
-                j1 = P//GRID_SIZE+1
-                i2 = Q%GRID_SIZE+1
-                j2 = Q//GRID_SIZE+1
+        for P in range(4*4):
+            for Q in range(P+1, 4*4):
+                i1 = P%4+1
+                j1 = P//4+1
+                i2 = Q%4+1
+                j2 = Q//4+1
                 clauses.append(['!'+k+str(i1)+str(j1), '!'+k+str(i2)+str(j2)])
-        for clause in clauses:
-            kb.add(' '.join(clause))
+        kb.extend(clauses)
         # print(len(clauses))
 
+    # print(len(kb))
+    # print(kb)
     # for clause in kb:
-    #     print(clause)
+    #     print(' '.join(clause))
 
-    ag = Agent()
-    hybrid_wumpus_agent(ag, kb, symbols, {})
-
-
+    # ag = Agent()
+    # hybrid_wumpus_agent(ag, kb, symbols, {})
 
 
 
-
-
-
-
-
-    # DPLL testing
-
-    # input_cnf = open('sampleCNF/7-20.txt', 'r').read()
-    # input_cnf = input_cnf.splitlines()
-    # kb = set(input_cnf)
-    # symbols = set()
-    # for clause in input_cnf:
-    #     for c in clause.split():
-    #         c = c if c[0] != '!' else c[1:]
-    #         symbols.add(c)
-
+    input_cnf = open('sampleCNF/wumpus_input.txt', 'r').read()
+    input_cnf = input_cnf.splitlines()
+    kb = []
+    symbols = set()
+    for clause in input_cnf:
+        temp = clause.split()
+        kb.append(clause.split())
+        for c in temp:
+            c = c if c[0] != '!' else c[1:]
+            if c not in symbols:
+                symbols.add(c)
     # print(kb)
     # print(symbols)
-
-    # if dpll(kb, symbols, {}) == False:
-    #     print("unsatisfiable")
-    # else:
-    #     print("satisfiable")
+    if dpll(kb, symbols, {}) == False:
+        print("unsatisfiable")
+    else:
+        print("satisfiable")
 
 
 
