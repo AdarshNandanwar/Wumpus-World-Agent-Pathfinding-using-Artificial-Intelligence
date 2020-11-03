@@ -87,7 +87,7 @@ def dpll(clauses, symbols, model):
 
 
     if is_all_true:
-        # print("all true")
+        print(model)
         return True
 
     
@@ -177,13 +177,40 @@ def hybrid_wumpus_agent(ag, kb, symbols, model):
 
         loc = ag.FindCurrentLocation()
         print(loc)
-
         if loc is [GRID_SIZE,GRID_SIZE]:
             break
+        visited.add('r'+str(loc[0])+str(loc[1]))
+
+        # print(kb)
+        # print(len(kb))
+
+        # ADD RULES FO CURRENT LOCATION
+        # add breeze <-> pit and stench <-> wumpus sentences
+        i,j = loc
+        dir = [0, -1, 0, 1, 0]
+        percept = ['b', 's']
+        conclusion = ['p', 'w']
+        for p in range(2):
+            clauses = []
+            for k in range(GRID_SIZE):
+                x = i+dir[k]
+                y = j+dir[k+1]
+                if x>=1 and x<=GRID_SIZE and y>=1 and y<=GRID_SIZE:
+                    if len(clauses) == 0:
+                        clauses.append(['!'+percept[p]+str(i)+str(j)])
+                    clauses[0].append(conclusion[p]+str(x)+str(y))
+                    clauses.append([percept[p]+str(i)+str(j), '!'+conclusion[p]+str(x)+str(y)])
+            if len(clauses) > 0:
+                for clause in clauses:
+                    clause.sort()
+                    kb.add(' '.join(clause))
+                # print("[{0},{1}]: {2}".format(i, j, clauses))
+
+
+
 
         percept = ag.PerceiveCurrentLocation()
         print("percept: {0}".format(percept))
-        visited.add('r'+str(loc[0])+str(loc[1]))
 
 
         if percept[0]:
@@ -194,6 +221,10 @@ def hybrid_wumpus_agent(ag, kb, symbols, model):
             # stench
             kb.append('s'+str(loc[0])+str(loc[1]))
 
+
+        # res = dpll(kb, symbols, {})
+        # print("kb: {0}".format(res))
+
         dir = [0, -1, 0, 1, 0]
         for k in range(GRID_SIZE):
             x = loc[0]+dir[k]
@@ -201,12 +232,22 @@ def hybrid_wumpus_agent(ag, kb, symbols, model):
             if x>=1 and x<=GRID_SIZE and y>=1 and y<=GRID_SIZE and 'r'+str(x)+str(y) not in visited:
                 kb_p = kb.copy()
                 kb_p.add('p'+str(x)+str(y))
-                is_no_pit = (dpll(kb_p, symbols, {}) == False)
+
+                print("CHECKING PIT AT [{0}, {1}]".format(x,y))
+                res = dpll(kb_p, symbols, {})
+                print(res)
+                is_no_pit = (res == False)
+                
                 if is_no_pit:
                     kb.add('!p'+str(x)+str(y))
                 kb_w = kb.copy()
                 kb_w.add('w'+str(x)+str(y))
-                is_no_wumpus = (dpll(kb_w, symbols, {}) == False)
+                
+                print("CHECKING WUMPUS AT [{0}, {1}]".format(x,y))
+                res = dpll(kb_w, symbols, {})
+                print(res)
+                is_no_wumpus = (res == False)
+
                 if is_no_wumpus:
                     kb.add('!w'+str(x)+str(y))
                 print("dpll {0}: no pit {1}, no wumpus {2}".format('r'+str(x)+str(y), is_no_pit, is_no_wumpus))
@@ -263,26 +304,7 @@ def main():
     kb.add('!p11')
     kb.add('!w11')
 
-    # add breeze <-> pit and stench <-> wumpus sentences
-    dir = [0, -1, 0, 1, 0]
-    percept = ['b', 's']
-    conclusion = ['p', 'w']
-    for p in range(2):
-        for i in range(1,GRID_SIZE+1):
-            for j in range(1,GRID_SIZE+1):
-                clauses = []
-                for k in range(GRID_SIZE):
-                    x = i+dir[k]
-                    y = j+dir[k+1]
-                    if x>=1 and x<=GRID_SIZE and y>=1 and y<=GRID_SIZE:
-                        if len(clauses) == 0:
-                            clauses.append(['!'+percept[p]+str(i)+str(j)])
-                        clauses[0].append(conclusion[p]+str(x)+str(y))
-                        clauses.append([percept[p]+str(i)+str(j), '!'+conclusion[p]+str(x)+str(y)])
-                if len(clauses) > 0:
-                    for clause in clauses:
-                        kb.add(' '.join(clause))
-                    # print("[{0},{1}]: {2}".format(i, j, clauses))
+
 
     # atleast 1 wumpus and atleast 1 pit
     for k in {'w', 'p'}:
@@ -290,6 +312,7 @@ def main():
         for i in range(1,GRID_SIZE+1):
             for j in range(1,GRID_SIZE+1):
                 clause.append(k+str(i)+str(j))
+        clause.sort()
         kb.add(' '.join(clause))
 
     # atmost 1 wumpus and atmost 1 pit 
@@ -303,6 +326,7 @@ def main():
                 j2 = Q//GRID_SIZE+1
                 clauses.append(['!'+k+str(i1)+str(j1), '!'+k+str(i2)+str(j2)])
         for clause in clauses:
+            clause.sort()
             kb.add(' '.join(clause))
         # print(len(clauses))
 
