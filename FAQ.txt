@@ -1,0 +1,68 @@
+(I will keep updating this file based on student queries. Last update: Q13 was added on 30/10/20.)
+
+
+Q1. How to upload the assignment?
+
+The assignment must be submitted through the course page on Quanta. I have put a link there.
+
+
+Q2. Can we directly access the variables within the Agent class?
+
+The variables (e.g. _wumpusWorld) within the Agent class should not be directly accessed. Only the functions FindCurrentLocation(), PerceiveCurrentLocation() and TakeAction() should be used.
+
+
+Q3. Do we need to write code such that the logical agent can take risks?
+
+You can assume that this situation will not arise. The agent will always be able to find some location which is safe and unvisited.
+
+
+Q4. Does early termination count as a heuristic?
+
+Yes, early termination would count as a heuristic.
+
+
+Q5. Are we supposed to include sentences in the KB that relate breeze to pit and stench to wumpus?
+
+Yes, the sentences that correspond to the rules of the Wumpus world must be initially added to the KB in CNF form.
+
+
+Q6. How should I proceed?
+
+At each step, the agent perceives a room. New sentences corresponding to the new percept must be added to the KB in CNF form. After perceiving, agent checks whether there are rooms that are unvisited and safe. (See the Hybrid agent given in the textbook in Section 7.7.2.) I expect students to implement a simplified version of the Hybrid agent.
+
+
+Q7. Do we need to use any fluent variables?
+
+The problem at hand does not require any fluent variables. So, you can assume that all the variables are atemporal.
+
+
+Q8. How long should the report be?
+
+The report need not be very long. It can be two to three pages.
+
+
+Q9. Can the inferencing be implemented as part of the program itself?
+
+NO. The inferencing should NOT be a part of your program. The whole point of this exercise is to make students think about what is the background knowledge and how to express the background knowledge in propositional logic. "There is only one pit and one wumpus" is a background knowledge. Similarly, there are other rules that form the background knowledge. Whatever percept is obtained should be added to the knowledge base. Which room is safe should be inferred from the KB. If KB entails (not pit and not wumpus), then the room is safe.
+
+
+Q10. Should we find the shortest path from [1,1] to [4,4]?
+
+No. Any path would do. It need not be the shortest path.
+
+
+Q11. What do you mean "see how many calls are made to dpll" in the assignment description?
+
+You should report the number of recursive calls to the DPLL function. See the figure mentioned within brackets in the assignment description. If the search tree gets pruned, the number of recursive calls to DPLL function will get reduced.
+
+
+Q12. Can I import the copy library?
+
+Yes, you can import.
+
+
+Q13. Should we implement more than three heuristics in DPLL algorithm?
+
+No. If you can implement three, it would be sufficient.
+
+
