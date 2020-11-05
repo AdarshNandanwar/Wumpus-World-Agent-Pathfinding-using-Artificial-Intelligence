@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 from Agent import * # See the Agent.py file
+import time
+import random
 
 
 #### All your code can go here.
 
 GRID_SIZE = 4
+DEBUG = 1
+start_time = 0
+total_dpll_calls = 0
 
 def find_pure_symbols(clauses, symbols, model):
     for sym in symbols:
@@ -32,15 +37,13 @@ def find_unit_clause(clauses, model):
             return (clause[0] if clause[0][0] != '!' else clause[0][1:]), (clause[0][0] != '!')
     return None, None
 
+
 def dpll(clauses, symbols, model):
 
-    # print("clauses: {0}".format(clauses))
-    # print("model: {0}".format(model))
+    global total_dpll_calls
+    total_dpll_calls += 1
 
-    # Remove true clauses as we go
-
-
-    # max frequency symbol
+    # most frequent HEURISTIC
     max_sym = [None, 0]
     freq = dict()
 
@@ -87,11 +90,7 @@ def dpll(clauses, symbols, model):
 
 
     if is_all_true:
-        # print(model)
         return model
-
-    
-    # print("next_clauses: {0}".format(next_clauses))
 
     # finding pure symbols
     pure_symbol, value = find_pure_symbols(next_clauses, symbols, model)
@@ -113,17 +112,18 @@ def dpll(clauses, symbols, model):
         next_model[unit_clause] = value
         return dpll(next_clauses, next_symbols, next_model)
 
-    # print("SHOULD NEVER REACH HERE")
-
     next_symbols = symbols.copy()
     first = max_sym[0]
     if first in next_symbols:
         next_symbols.remove(first)
     next_model = model.copy()
-    next_model[first] = True
+
+    # Random Assignment HEURISTIC
+    value = random.randint(0, 1)
+    next_model[first] = (value == 1)
     res = dpll(next_clauses, next_symbols, next_model)
     if res: return res
-    next_model[first] = False
+    next_model[first] = not next_model[first]
     res = dpll(next_clauses, next_symbols, next_model)
     if res: return res
     return False
@@ -174,19 +174,38 @@ def hybrid_wumpus_agent(ag, kb, symbols, model):
     safe = set()
     safe.add('r11')
     visited = set()
+    unvisited = ['r11']
+
+    dpll_call_count = dict()
+    for i in range(1, GRID_SIZE+1):
+        for j in range(1, GRID_SIZE+1):
+            dpll_call_count['r'+str(i)+str(j)] = 0
+
+    # if DEBUG: print(kb)
+    if DEBUG: print("kb: {0} - {1} seconds".format(len(kb), time.time() - start_time))
 
     while True:
-
+        if DEBUG: print()
         loc = ag.FindCurrentLocation()
-        print(loc)
+        if DEBUG: print(loc)
         if loc == [GRID_SIZE,GRID_SIZE]:
             break
         visited.add('r'+str(loc[0])+str(loc[1]))
+        unvisited.remove('r'+str(loc[0])+str(loc[1]))
 
-        # print(kb)
-        # print(len(kb))
 
-        # ADD RULES FO CURRENT LOCATION
+        percept = ag.PerceiveCurrentLocation()
+        if DEBUG: print("percept: {0}".format(percept))
+        # breeze
+        kb.add(('' if percept[0] else '!')+'b'+str(loc[0])+str(loc[1]))
+        # if DEBUG: print("[{0}, {1}]: {2}".format(i, j, ('' if percept[0] else '!')+'b'+str(loc[0])+str(loc[1])))
+        # stench
+        kb.add(('' if percept[1] else '!')+'s'+str(loc[0])+str(loc[1]))
+        # if DEBUG: print("[{0}, {1}]: {2}".format(i, j, ('' if percept[1] else '!')+'s'+str(loc[0])+str(loc[1])))
+
+
+        # ADD RULES OF CURRENT LOCATION
+
         # add breeze <-> pit and stench <-> wumpus sentences
         i,j = loc
         dir = [0, -1, 0, 1, 0]
@@ -206,61 +225,121 @@ def hybrid_wumpus_agent(ag, kb, symbols, model):
                 for clause in clauses:
                     clause.sort()
                     kb.add(' '.join(clause))
-                # print("[{0},{1}]: {2}".format(i, j, clauses))
+                if DEBUG: print("[{0}, {1}]: {2}".format(i, j, clauses))
 
 
-        percept = ag.PerceiveCurrentLocation()
-        print("percept: {0}".format(percept))
+        # # add breeze -> pit, !breeze -> !pit and stench -> wumpus, !stench -> !wumpus sentences
+        # i,j = loc
+        # dir = [0, -1, 0, 1, 0]
+        # percept = ['b', 's']
+        # conclusion = ['p', 'w']
+        # for p in range(2):
+        #     clauses = []
+        #     clause_true = []
+        #     for k in range(GRID_SIZE):
+        #         x = i+dir[k]
+        #         y = j+dir[k+1]
+        #         if x>=1 and x<=GRID_SIZE and y>=1 and y<=GRID_SIZE:
+        #             if len(clause_true) == 0:
+        #                 clause_true.append('!'+percept[p]+str(i)+str(j))
+        #             clause_true.append(conclusion[p]+str(x)+str(y))
+        #             clauses.append([percept[p]+str(i)+str(j), '!'+conclusion[p]+str(x)+str(y)])
+        #     if len(clauses) > 0:
+        #         clause_true.sort()
+        #         kb.add(' '.join(clause_true))
+        #         for clause in clauses:
+        #             clause.sort()
+        #             kb.add(' '.join(clause))
+        #         if DEBUG: print("[{0}, {1}]: {2} {3}".format(i, j, clauses, clause_true))
 
 
-        # breeze
-        kb.add(('' if percept[0] else '!')+'b'+str(loc[0])+str(loc[1]))
 
-        # stench
-        kb.add(('' if percept[1] else '!')+'s'+str(loc[0])+str(loc[1]))
+        if DEBUG: print("kb: {0} - {1} seconds".format(len(kb), time.time() - start_time))
 
+        next_room = None
 
         dir = [0, -1, 0, 1, 0]
         for k in range(GRID_SIZE):
             x = loc[0]+dir[k]
             y = loc[1]+dir[k+1]
             if x>=1 and x<=GRID_SIZE and y>=1 and y<=GRID_SIZE and 'r'+str(x)+str(y) not in visited:
-                kb_p = kb.copy()
-                kb_p.add('p'+str(x)+str(y))
 
-                # print("CHECKING PIT AT [{0}, {1}]".format(x,y))
-                res = dpll(kb_p, symbols, {})
-                is_no_pit = (res == False)
+                if 'r'+str(x)+str(y) not in unvisited:
+                    unvisited.append('r'+str(x)+str(y))
+
+                # Early Termination HEURISTIC
+                if [x,y] == [GRID_SIZE,GRID_SIZE]:
+                    next_room = 'r'+str(x)+str(y)
+
+                # kb_p = kb.copy()
+                # kb_p.add('p'+str(x)+str(y))
+
+                # # print("CHECKING PIT AT [{0}, {1}]".format(x,y))
+                # res = dpll(kb_p, symbols, {})
+                # is_no_pit = (res == False)
                 
-                if is_no_pit:
-                    kb.add('!p'+str(x)+str(y))
-                kb_w = kb.copy()
-                kb_w.add('w'+str(x)+str(y))
+                # if is_no_pit:
+                #     kb.add('!p'+str(x)+str(y))
+                # kb_w = kb.copy()
+                # kb_w.add('w'+str(x)+str(y))
                 
-                # print("CHECKING WUMPUS AT [{0}, {1}]".format(x,y))
-                res = dpll(kb_w, symbols, {})
-                is_no_wumpus = (res == False)
+                # # print("CHECKING WUMPUS AT [{0}, {1}]".format(x,y))
+                # res = dpll(kb_w, symbols, {})
+                # is_no_wumpus = (res == False)
 
-                if is_no_wumpus:
-                    kb.add('!w'+str(x)+str(y))
-                print("dpll {0}: no pit {1}, no wumpus {2}".format('r'+str(x)+str(y), is_no_pit, is_no_wumpus))
-                if is_no_pit and is_no_wumpus:
-                    safe.add('r'+str(x)+str(y))
+                # if is_no_wumpus:
+                #     kb.add('!w'+str(x)+str(y))
+                # print("dpll {0}: no pit {1}, no wumpus {2}".format('r'+str(x)+str(y), is_no_pit, is_no_wumpus))
+                # if is_no_pit and is_no_wumpus:
+                #     safe.add('r'+str(x)+str(y))
 
-        print("safe {0}".format(safe))
-        print("visited {0}".format(visited))
+        if DEBUG: print("safe {0}".format(safe))
+        if DEBUG: print("visited {0}".format(visited))
+        if DEBUG: print("unvisited {0}".format(unvisited))
 
         # assuming there is always a safe room
-        if len(safe) == len(visited):
-            print("no safe room")
-            return
+        if next_room == None:
+            if len(safe) == len(visited):
 
-        next_room = None
-        for room in safe:
-            if room not in visited:
-                next_room = room
-                break
-        print("next_room {0}".format(next_room))
+                # # manhattan diatance HEURISTIC
+                # unvisited.sort(key=lambda x: abs(GRID_SIZE-int(x[1]))+abs(GRID_SIZE-int(x[2])))
+                # if DEBUG: print("unvisited ordered {0}".format(unvisited))
+
+                # Less Repeatition and manhattan diatance HEURISTIC
+                unvisited.sort(key=lambda x: (dpll_call_count[x], abs(GRID_SIZE-int(x[1]))+abs(GRID_SIZE-int(x[2]))))
+                if DEBUG: print("unvisited ordered {0}".format(unvisited))
+
+                # # Random order
+                # random.shuffle(unvisited)
+                # if DEBUG: print("unvisited shuffled {0}".format(unvisited))
+
+                # find safe rooms in unvisited
+                for unvisited_room in unvisited:
+                    dpll_call_count[unvisited_room] += 1
+                    # print("CHECKING IF NO PIT AND NOT WUMPUS AT [{0}, {1}]".format(x,y))
+                    kb_safe = kb.copy()
+                    kb_safe.add('p'+unvisited_room[1:]+' '+'w'+unvisited_room[1:])
+                    res = dpll(kb_safe, symbols, {})
+                    is_safe = (res == False)
+                    if DEBUG: print("dpll {0}: is safe {1}".format('r'+unvisited_room[1:], is_safe))
+                    if is_safe:
+                        kb.add('!p'+unvisited_room[1:])
+                        kb.add('!w'+unvisited_room[1:])
+                        safe.add('r'+unvisited_room[1:])
+                        next_room = 'r'+unvisited_room[1:]
+                        # break HEURISTIC
+                        break
+
+                if next_room == None:
+                    print("no safe room")
+                    return
+            else:
+                for safe_room in safe:
+                    if safe_room not in visited:
+                        next_room = safe_room
+                        break
+
+        if DEBUG: print("next_room {0}".format(next_room))
 
         action_sequence = plan_route(loc, [int(next_room[1]), int(next_room[2])], visited)
         # print("action_sequence {0}".format(action_sequence))
@@ -295,7 +374,9 @@ def main():
 
     # no pit or wumpus in [1,1]
     kb.add('!p11')
+    kb.add('!p'+str(GRID_SIZE)+str(GRID_SIZE))
     kb.add('!w11')
+    kb.add('!w'+str(GRID_SIZE)+str(GRID_SIZE))
 
     # atleast 1 wumpus and atleast 1 pit
     for k in {'w', 'p'}:
@@ -328,6 +409,8 @@ def main():
 
 
 
-
 if __name__=='__main__':
+    start_time = time.time()
     main()
+    print("--- %s seconds ---" % (time.time() - start_time))
+    print('total dpll calls:',total_dpll_calls)
