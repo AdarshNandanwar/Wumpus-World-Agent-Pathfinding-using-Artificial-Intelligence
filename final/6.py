@@ -233,8 +233,8 @@ def hybrid_wumpus_agent(ag, kb, symbols, model):
 
         if DEBUG: print("kb: {0} - {1} seconds".format(len(kb), time.time() - start_time))
 
-        # Random Room Ordering HEURISTIC
-        random.shuffle(rooms)
+        # # Random Room Ordering HEURISTIC
+        # random.shuffle(rooms)
         for room in rooms:
             if room not in safe:
                 # print("CHECKING IF NO PIT AND NOT WUMPUS AT [{0}, {1}]".format(x,y))
@@ -341,45 +341,8 @@ def main():
             clause.sort()
             kb.add(' '.join(clause))
 
-    # TESTING
-    counter = 0
-    grid = [['','','',''],['','','',''],['','','',''],['','','','']]
-    for i in range(GRID_SIZE*GRID_SIZE):
-        x1 = i%GRID_SIZE
-        y1 = i//GRID_SIZE
-        if [x1,y1] == [0,0] or [x1,y1] == [GRID_SIZE-1, GRID_SIZE-1]:
-            continue
-        for j in range(i+1,GRID_SIZE*GRID_SIZE):
-            x2 = j%GRID_SIZE
-            y2 = j//GRID_SIZE
-            if [x2,y2] == [0,0] or [x2,y2] == [GRID_SIZE-1, GRID_SIZE-1]:
-                continue
-            
-            # room1 has wumpus
-            counter += 1
-            grid[x1][y1] = 'W'
-            grid[x2][y2] = 'P'
-            ag = Agent(grid)
-            print('[{0}]'.format(counter))
-            for row in reversed(grid):
-                print(row)
-            hybrid_wumpus_agent(ag, kb.copy(), symbols.copy(), {})
-
-            # room1 has pit
-            counter += 1
-            grid[x1][y1] = 'P'
-            grid[x2][y2] = 'W'
-            ag = Agent(grid)
-            print('[{0}]'.format(counter))
-            for row in reversed(grid):
-                print(row)
-            hybrid_wumpus_agent(ag, kb.copy(), symbols.copy(), {})
-
-            grid[x1][y1] = ''
-            grid[x2][y2] = ''
-
-    # ag = Agent()
-    # hybrid_wumpus_agent(ag, kb, symbols, {})
+    ag = Agent()
+    hybrid_wumpus_agent(ag, kb, symbols, {})
 
     print("time {0} seconds, total dpll calls {1}".format(time.time() - start_time, total_dpll_calls))
 

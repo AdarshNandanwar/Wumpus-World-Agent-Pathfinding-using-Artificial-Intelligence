@@ -93,15 +93,15 @@ def dpll(clauses, symbols, model):
         next_model[pure_symbol] = value
         return dpll(next_clauses, next_symbols, next_model)
 
-    # Unit Clause HEURISTIC
-    unit_clause, value = find_unit_clause(next_clauses, model)
-    if unit_clause != None:
-        # print("unit_clause: {0} = {1}".format(unit_clause, value))
-        next_symbols = symbols.copy()
-        next_symbols.remove(unit_clause)
-        next_model = model.copy()
-        next_model[unit_clause] = value
-        return dpll(next_clauses, next_symbols, next_model)
+    # # Unit Clause HEURISTIC
+    # unit_clause, value = find_unit_clause(next_clauses, model)
+    # if unit_clause != None:
+    #     # print("unit_clause: {0} = {1}".format(unit_clause, value))
+    #     next_symbols = symbols.copy()
+    #     next_symbols.remove(unit_clause)
+    #     next_model = model.copy()
+    #     next_model[unit_clause] = value
+    #     return dpll(next_clauses, next_symbols, next_model)
 
 
     # BRANCHING PART
@@ -341,45 +341,8 @@ def main():
             clause.sort()
             kb.add(' '.join(clause))
 
-    # TESTING
-    counter = 0
-    grid = [['','','',''],['','','',''],['','','',''],['','','','']]
-    for i in range(GRID_SIZE*GRID_SIZE):
-        x1 = i%GRID_SIZE
-        y1 = i//GRID_SIZE
-        if [x1,y1] == [0,0] or [x1,y1] == [GRID_SIZE-1, GRID_SIZE-1]:
-            continue
-        for j in range(i+1,GRID_SIZE*GRID_SIZE):
-            x2 = j%GRID_SIZE
-            y2 = j//GRID_SIZE
-            if [x2,y2] == [0,0] or [x2,y2] == [GRID_SIZE-1, GRID_SIZE-1]:
-                continue
-            
-            # room1 has wumpus
-            counter += 1
-            grid[x1][y1] = 'W'
-            grid[x2][y2] = 'P'
-            ag = Agent(grid)
-            print('[{0}]'.format(counter))
-            for row in reversed(grid):
-                print(row)
-            hybrid_wumpus_agent(ag, kb.copy(), symbols.copy(), {})
-
-            # room1 has pit
-            counter += 1
-            grid[x1][y1] = 'P'
-            grid[x2][y2] = 'W'
-            ag = Agent(grid)
-            print('[{0}]'.format(counter))
-            for row in reversed(grid):
-                print(row)
-            hybrid_wumpus_agent(ag, kb.copy(), symbols.copy(), {})
-
-            grid[x1][y1] = ''
-            grid[x2][y2] = ''
-
-    # ag = Agent()
-    # hybrid_wumpus_agent(ag, kb, symbols, {})
+    ag = Agent()
+    hybrid_wumpus_agent(ag, kb, symbols, {})
 
     print("time {0} seconds, total dpll calls {1}".format(time.time() - start_time, total_dpll_calls))
 
