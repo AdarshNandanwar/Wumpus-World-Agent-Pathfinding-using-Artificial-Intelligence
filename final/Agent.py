@@ -3,7 +3,7 @@ Logical Agent for programming assignment 2.
 """
 
 class Agent:
-    def __init__(self, grid = None):
+    def __init__(self):
         self._wumpusWorld = [
                  ['','','',''], # Rooms [1,1] to [4,1]
                  ['','','P',''], # Rooms [1,2] to [4,2] 
@@ -11,8 +11,6 @@ class Agent:
                  ['','','',''],  # Rooms [1,4] to [4,4]
                 ] # This is the wumpus world shown in the assignment question.
                   # A different instance of the wumpus world will be used for evaluation.
-        if grid != None:
-            self._wumpusWorld = grid
         self._curLoc = [1,1]
         self._isAlive = True
         self._hasExited = False
@@ -98,23 +96,23 @@ class Agent:
     def FindCurrentLocation(self):
         return self._curLoc
 
-# def main():
-#     ag = Agent()
-#     print('curLoc',ag.FindCurrentLocation())
-#     print('Percept [breeze, stench] :',ag.PerceiveCurrentLocation())
-#     ag.TakeAction('Right')
-#     print('Percept',ag.PerceiveCurrentLocation())
-#     ag.TakeAction('Right')
-#     print('Percept',ag.PerceiveCurrentLocation())
-#     ag.TakeAction('Right')
-#     print('Percept',ag.PerceiveCurrentLocation())
-#     ag.TakeAction('Up')
-#     print('Percept',ag.PerceiveCurrentLocation())
-#     ag.TakeAction('Up')
-#     print('Percept',ag.PerceiveCurrentLocation())
-#     ag.TakeAction('Up')
-#     print('Percept',ag.PerceiveCurrentLocation())
+def main():
+    ag = Agent()
+    print('curLoc',ag.FindCurrentLocation())
+    print('Percept [breeze, stench] :',ag.PerceiveCurrentLocation())
+    ag.TakeAction('Right')
+    print('Percept',ag.PerceiveCurrentLocation())
+    ag.TakeAction('Right')
+    print('Percept',ag.PerceiveCurrentLocation())
+    ag.TakeAction('Right')
+    print('Percept',ag.PerceiveCurrentLocation())
+    ag.TakeAction('Up')
+    print('Percept',ag.PerceiveCurrentLocation())
+    ag.TakeAction('Up')
+    print('Percept',ag.PerceiveCurrentLocation())
+    ag.TakeAction('Up')
+    print('Percept',ag.PerceiveCurrentLocation())
 
 
-# if __name__=='__main__':
-#     main()  
+if __name__=='__main__':
+    main()  
